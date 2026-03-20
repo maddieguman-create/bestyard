@@ -105,7 +105,7 @@ body {
   display: flex;
   justify-content: space-around;
   padding: 6px 0;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--cream-dark);
   box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
 }

@@ -2,7 +2,7 @@
   "name": "Best Yard LLC - Business Manager",
   "short_name": "Best Yard",
   "description": "Business management app for Best Yard LLC lawn care in Charleston, SC",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1B3A4B",
   "theme_color": "#1B3A4B",

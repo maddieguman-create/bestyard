@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1B3A4B">
+  <title>Best Yard LLC - Business Manager</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="assets/bestyard-logo.jpeg">
+  <link rel="apple-touch-icon" href="assets/bestyard-logo.jpeg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-logo">
+      <img src="assets/bestyard-logo.jpeg" alt="Best Yard LLC" class="logo-img">
+      <div class="header-text">
+        <h1>Best Yard LLC</h1>
+        <span class="header-sub">Charleston, SC</span>
+      </div>
+    </div>
+    <div class="header-date" id="headerDate"></div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="app-content">
+
+    <!-- Dashboard View -->
+    <section class="view active" id="viewDashboard">
+      <div class="dashboard-greeting" id="dashGreeting"></div>
+      <div class="dashboard-stats">
+        <div class="stat-card" onclick="switchTab('schedule')">
+          <div class="stat-icon">&#128197;</div>
+          <div class="stat-number" id="statTodayJobs">0</div>
+          <div class="stat-label">Today's Jobs</div>
+        </div>
+        <div class="stat-card" onclick="switchTab('clients')">
+          <div class="stat-icon">&#128101;</div>
+          <div class="stat-number" id="statClients">0</div>
+          <div class="stat-label">Clients</div>
+        </div>
+        <div class="stat-card" onclick="switchTab('quotes')">
+          <div class="stat-icon">&#128176;</div>
+          <div class="stat-number" id="statPendingQuotes">0</div>
+          <div class="stat-label">Pending Quotes</div>
+        </div>
+        <div class="stat-card" onclick="switchTab('notes')">
+          <div class="stat-icon">&#128221;</div>
+          <div class="stat-number" id="statNotes">0</div>
+          <div class="stat-label">Notes</div>
+        </div>
+      </div>
+      <div class="dashboard-section">
+        <h3>Today's Schedule</h3>
+        <div id="dashTodayList" class="dash-list"></div>
+      </div>
+      <div class="dashboard-section">
+        <h3>Recent Notes</h3>
+        <div id="dashRecentNotes" class="dash-list"></div>
+      </div>
+    </section>
+
+    <!-- Schedule View -->
+    <section class="view" id="viewSchedule">
+      <div class="view-header">
+        <h2>Schedule</h2>
+        <div style="display:flex;gap:6px">
+          <button class="btn-primary" onclick="openModal('scheduleModal')">+ Maintenance</button>
+          <button class="btn-primary" style="background:var(--sage)" onclick="openModal('oneOffJobModal')">+ Job</button>
+        </div>
+      </div>
+      <div class="schedule-view-toggle">
+        <button class="chip active" id="viewToggleMonth" onclick="setScheduleView('month')">Month</button>
+        <button class="chip" id="viewToggleWeek" onclick="setScheduleView('week')">Week</button>
+        <button class="chip" id="viewToggleDay" onclick="setScheduleView('day')">Day</button>
+      </div>
+      <div class="date-nav">
+        <button class="btn-icon" onclick="navigateSchedule(-1)">&#9664;</button>
+        <span class="date-nav-label" id="scheduleLabel"></span>
+        <button class="btn-icon" onclick="navigateSchedule(1)">&#9654;</button>
+        <button class="btn-sm" onclick="goToToday()">Today</button>
+        <button class="btn-sm" style="color:var(--warning);border-color:var(--warning)" onclick="openBulkReschedule()">Reschedule Day</button>
+      </div>
+      <input type="hidden" id="scheduleDate">
+      <!-- Month View -->
+      <div id="monthView" class="month-grid-wrap"></div>
+      <!-- Week View -->
+      <div id="weekView" class="week-view-wrap"></div>
+      <!-- Day View -->
+      <div id="dayView">
+        <div class="week-strip" id="weekStrip"></div>
+        <div id="scheduleList" class="card-list"></div>
+      </div>
+    </section>
+
+    <!-- Notes View -->
+    <section class="view" id="viewNotes">
+      <div class="view-header">
+        <h2>Field Notes</h2>
+        <button class="btn-primary" onclick="openModal('noteModal')">+ New Note</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="noteSearch" placeholder="Search notes..." oninput="renderNotes()">
+      </div>
+      <div class="filter-chips">
+        <button class="chip active" onclick="filterNotes('all', this)">All</button>
+        <button class="chip" onclick="filterNotes('request', this)">Requests</button>
+        <button class="chip" onclick="filterNotes('reminder', this)">Reminders</button>
+        <button class="chip" onclick="filterNotes('general', this)">General</button>
+      </div>
+      <div id="notesList" class="card-list"></div>
+    </section>
+
+    <!-- Quotes View -->
+    <section class="view" id="viewQuotes">
+      <div class="view-header">
+        <h2>Quotes</h2>
+        <button class="btn-primary" onclick="openModal('quoteModal')">+ New Quote</button>
+      </div>
+      <div class="filter-chips">
+        <button class="chip active" onclick="filterQuotes('all', this)">All</button>
+        <button class="chip" onclick="filterQuotes('pending', this)">Pending</button>
+        <button class="chip" onclick="filterQuotes('accepted', this)">Accepted</button>
+        <button class="chip" onclick="filterQuotes('declined', this)">Declined</button>
+      </div>
+      <div id="quotesList" class="card-list"></div>
+    </section>
+
+    <!-- Clients View -->
+    <section class="view" id="viewClients">
+      <div class="view-header">
+        <h2>Clients</h2>
+        <button class="btn-primary" onclick="openModal('clientModal')">+ New Client</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="clientSearch" placeholder="Search clients..." oninput="renderClients()">
+      </div>
+      <div id="clientsList" class="card-list"></div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-view="dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" data-view="schedule" onclick="switchTab('schedule')">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" fill="currentColor"/></svg>
+      <span>Schedule</span>
+    </button>
+    <button class="nav-btn" data-view="notes" onclick="switchTab('notes')">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 18h12v-2H3v2zM3 6v2h18V6H3zm0 7h18v-2H3v2z" fill="currentColor"/></svg>
+      <span>Notes</span>
+    </button>
+    <button class="nav-btn" data-view="quotes" onclick="switchTab('quotes')">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3 4h4v1.5h-4V13zm6 4H8v-1.5h8V17zm0-6H8v-1.5h8V11z" fill="currentColor"/></svg>
+      <span>Quotes</span>
+    </button>
+    <button class="nav-btn" data-view="clients" onclick="switchTab('clients')">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
+      <span>Clients</span>
+    </button>
+  </nav>
+
+  <!-- Schedule Modal -->
+  <div class="modal-overlay" id="scheduleModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="scheduleModalTitle">New Job</h3>
+        <button class="btn-close" onclick="closeModal('scheduleModal')">&times;</button>
+      </div>
+      <form onsubmit="saveJob(event)">
+        <input type="hidden" id="jobId">
+        <div class="form-group">
+          <label>Client</label>
+          <select id="jobClient" required>
+            <option value="">Select client...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="jobDate" required>
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" id="jobTime">
+        </div>
+        <input type="hidden" id="jobService" value="Maintenance">
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="jobNotes" rows="3" placeholder="Job details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="jobStatus">
+            <option value="scheduled">Scheduled</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('scheduleModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- One-Off Job Modal -->
+  <div class="modal-overlay" id="oneOffJobModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="oneOffJobModalTitle">New Job</h3>
+        <button class="btn-close" onclick="closeModal('oneOffJobModal')">&times;</button>
+      </div>
+      <form onsubmit="saveOneOffJob(event)">
+        <input type="hidden" id="oneOffJobId">
+        <div class="form-group">
+          <label>Client</label>
+          <select id="oneOffJobClient" required>
+            <option value="">Select client...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Job Title</label>
+          <input type="text" id="oneOffJobTitle" required placeholder="e.g. Plant palm tree, Install French drain">
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="oneOffJobDate" required>
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" id="oneOffJobTime">
+        </div>
+        <div class="form-group">
+          <label>Estimated Duration</label>
+          <select id="oneOffJobDuration">
+            <option value="1hr">1 hour</option>
+            <option value="2hr">2 hours</option>
+            <option value="half-day" selected>Half day</option>
+            <option value="full-day">Full day</option>
+            <option value="multi-day">Multi-day</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quoted Price ($)</label>
+          <input type="number" id="oneOffJobPrice" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="oneOffJobDesc" rows="3" placeholder="Materials needed, scope of work..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="oneOffJobStatus">
+            <option value="scheduled">Scheduled</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('oneOffJobModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bulk Reschedule Modal -->
+  <div class="modal-overlay" id="bulkRescheduleModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Reschedule Day</h3>
+        <button class="btn-close" onclick="closeModal('bulkRescheduleModal')">&times;</button>
+      </div>
+      <div style="padding:0 16px 8px;font-size:0.85rem;color:var(--text-mid)">
+        Moving <strong id="bulkCount">0</strong> scheduled items from <strong id="bulkFromDate"></strong>
+      </div>
+      <form onsubmit="saveBulkReschedule(event)">
+        <div class="form-group">
+          <label>Move to Date</label>
+          <input type="date" id="bulkNewDate" required>
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <select id="bulkReason">
+            <option value="Weather">Weather</option>
+            <option value="Client request">Client request</option>
+            <option value="Scheduling conflict">Scheduling conflict</option>
+            <option value="Equipment issue">Equipment issue</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('bulkRescheduleModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Move All</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reschedule Modal -->
+  <div class="modal-overlay" id="rescheduleModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Reschedule</h3>
+        <button class="btn-close" onclick="closeModal('rescheduleModal')">&times;</button>
+      </div>
+      <form onsubmit="saveReschedule(event)">
+        <input type="hidden" id="rescheduleId">
+        <input type="hidden" id="rescheduleType">
+        <div class="form-group">
+          <label>New Date</label>
+          <input type="date" id="rescheduleDate" required>
+        </div>
+        <div class="form-group">
+          <label>New Time</label>
+          <input type="time" id="rescheduleTime" required>
+        </div>
+        <div class="form-group">
+          <label>Reason (optional)</label>
+          <select id="rescheduleReason">
+            <option value="">Select...</option>
+            <option value="Weather">Weather</option>
+            <option value="Client request">Client request</option>
+            <option value="Scheduling conflict">Scheduling conflict</option>
+            <option value="Equipment issue">Equipment issue</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('rescheduleModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Move</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Note Modal -->
+  <div class="modal-overlay" id="noteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="noteModalTitle">New Note</h3>
+        <button class="btn-close" onclick="closeModal('noteModal')">&times;</button>
+      </div>
+      <form onsubmit="saveNote(event)">
+        <input type="hidden" id="noteId">
+        <div class="form-group">
+          <label>Type</label>
+          <select id="noteType">
+            <option value="general">General</option>
+            <option value="request">Client Request</option>
+            <option value="reminder">Reminder</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Client (optional)</label>
+          <select id="noteClient">
+            <option value="">No client</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="noteTitle" required placeholder="Quick summary...">
+        </div>
+        <div class="form-group">
+          <label>Details</label>
+          <textarea id="noteDetails" rows="5" placeholder="Full details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="notePriority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('noteModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quote Modal -->
+  <div class="modal-overlay" id="quoteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="quoteModalTitle">New Quote</h3>
+        <button class="btn-close" onclick="closeModal('quoteModal')">&times;</button>
+      </div>
+      <form onsubmit="saveQuote(event)">
+        <input type="hidden" id="quoteId">
+        <div class="form-group">
+          <label>Client</label>
+          <select id="quoteClient" required>
+            <option value="">Select client...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Service</label>
+          <select id="quoteService" required>
+            <option value="">Select service...</option>
+            <option value="Lawn Care">Lawn Care</option>
+            <option value="Mowing">Mowing</option>
+            <option value="Fertilization & Weed Control">Fertilization & Weed Control</option>
+            <option value="Landscape Design & Installation">Landscape Design & Installation</option>
+            <option value="Irrigation">Irrigation</option>
+            <option value="Outdoor Lighting">Outdoor Lighting</option>
+            <option value="Drainage">Drainage</option>
+            <option value="Commercial Maintenance">Commercial Maintenance</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="quoteDescription" rows="3" placeholder="Scope of work..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Frequency</label>
+          <select id="quoteFrequency">
+            <option value="one-time">One-Time</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="seasonal">Seasonal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount ($)</label>
+          <input type="number" id="quoteAmount" step="0.01" min="0" required placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="quoteStatus">
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="declined">Declined</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('quoteModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client Modal -->
+  <div class="modal-overlay" id="clientModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="clientModalTitle">New Client</h3>
+        <button class="btn-close" onclick="closeModal('clientModal')">&times;</button>
+      </div>
+      <form onsubmit="saveClient(event)">
+        <input type="hidden" id="clientId">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" id="clientName" required placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="clientPhone" placeholder="(843) 555-0000">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="clientEmail" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <input type="text" id="clientAddress" placeholder="123 King St, Charleston, SC">
+        </div>
+        <div class="form-group">
+          <label>Property Type</label>
+          <select id="clientPropertyType">
+            <option value="">Select...</option>
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="hoa">HOA</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Yard / Property Size</label>
+          <select id="clientYardSize">
+            <option value="">Select...</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+            <option value="xl">Extra Large</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Service Frequency</label>
+          <select id="clientFrequency">
+            <option value="">Select...</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="on-call">On-Call</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="clientNotes" rows="3" placeholder="Gate code, dog in yard, special instructions..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('clientModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client Detail Modal -->
+  <div class="modal-overlay" id="clientDetailModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="clientDetailName">Client</h3>
+        <button class="btn-close" onclick="closeModal('clientDetailModal')">&times;</button>
+      </div>
+      <div id="clientDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation -->
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Confirm Delete</h3>
+        <button class="btn-close" onclick="closeModal('deleteConfirmModal')">&times;</button>
+      </div>
+      <p style="padding: 0 1rem;">Are you sure you want to delete this item? This cannot be undone.</p>
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeModal('deleteConfirmModal')">Cancel</button>
+        <button class="btn-danger" id="deleteConfirmBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 /* ===== Best Yard LLC - Business Manager ===== */
 
-// ===== Data Layer =====
+// ===== Data Layer (Firebase + Local Cache) =====
 const DB_KEYS = {
   clients: 'by_clients',
   jobs: 'by_jobs',
@@ -8,16 +8,52 @@ const DB_KEYS = {
   quotes: 'by_quotes'
 };
 
+// Local cache — always up to date via Firebase listeners
+const _cache = {
+  by_clients: [],
+  by_jobs: [],
+  by_oneoff_jobs: [],
+  by_notes: [],
+  by_quotes: []
+};
+
 function getData(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || [];
-  } catch {
-    return [];
-  }
+  return _cache[key] || [];
 }
 
 function setData(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
+  _cache[key] = data;
+  window.db.ref(key).set(data);
+}
+
+// Listen to Firebase and keep cache in sync
+function initFirebaseSync() {
+  const allKeys = ['by_clients', 'by_jobs', 'by_oneoff_jobs', 'by_notes', 'by_quotes'];
+  let loaded = 0;
+
+  allKeys.forEach(key => {
+    window.db.ref(key).on('value', snapshot => {
+      _cache[key] = snapshot.val() || [];
+      loaded++;
+      // Once all collections loaded initially, render the app
+      if (loaded === allKeys.length) {
+        refreshAll();
+      }
+      // After initial load, any change triggers a refresh
+      if (loaded > allKeys.length) {
+        refreshAll();
+      }
+    });
+  });
+}
+
+function refreshAll() {
+  autoCompletePastJobs();
+  renderDashboard();
+  renderSchedule();
+  renderNotes();
+  renderQuotes();
+  renderClients();
 }
 
 function genId() {
@@ -35,15 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
-  autoCompletePastJobs();
   setHeaderDate();
   setGreeting();
   document.getElementById('scheduleDate').value = new Date().toISOString().split('T')[0];
   setScheduleView('month');
-  renderDashboard();
-  renderNotes();
-  renderQuotes();
-  renderClients();
+  initFirebaseSync();
 }
 
 // ===== Auto-Complete Past Jobs =====
